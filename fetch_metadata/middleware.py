@@ -101,15 +101,18 @@ class FetchMetadataMiddleware(MiddlewareMixin):
         if view_policy:
             allowed_sites = view_policy.get('ALLOWED_SITES', get_config('ALLOWED_SITES'))
             allow_navigations = view_policy.get('ALLOW_NAVIGATIONS', get_config('ALLOW_NAVIGATIONS'))
+            allow_safe_methods = view_policy.get('ALLOW_SAFE_METHODS', get_config('ALLOW_SAFE_METHODS'))
             fail_open = view_policy.get('FAIL_OPEN', get_config('FAIL_OPEN'))
         else:
             allowed_sites = get_config('ALLOWED_SITES')
             allow_navigations = get_config('ALLOW_NAVIGATIONS')
+            allow_safe_methods = get_config('ALLOW_SAFE_METHODS')
             fail_open = get_config('FAIL_OPEN')
 
         policy = {
             'allowed_sites': allowed_sites,
             'allow_navigations': allow_navigations,
+            'allow_safe_methods': allow_safe_methods,
             'fail_open': fail_open,
         }
 
@@ -124,11 +127,13 @@ class FetchMetadataMiddleware(MiddlewareMixin):
         if site in allowed_sites:
             return _result(True, 'allowed_site', policy)
 
-        # 7. Navigation exemption: Mode=navigate + safe method + ALLOW_NAVIGATIONS
+        # 7. Safe method exemption: GET/HEAD pass regardless of site
+        if allow_safe_methods and request.method in SAFE_METHODS:
+            return _result(True, 'safe_method', policy)
+
+        # 8. Navigation exemption: Mode=navigate + safe method + ALLOW_NAVIGATIONS
         # Excludes object/embed dests (cross-site embedding vectors).
-        # Also excludes nested-navigate (iframe loads): blocking cross-site
-        # iframes by default is a safe default. Use @fetch_metadata_exempt or
-        # @fetch_metadata_policy for views that need to be iframed cross-site.
+        # Also excludes nested-navigate (iframe loads).
         mode = headers['mode']
         dest = headers['dest']
         if (
@@ -139,5 +144,5 @@ class FetchMetadataMiddleware(MiddlewareMixin):
         ):
             return _result(True, 'navigation', policy)
 
-        # 8. Violation
+        # 9. Violation
         return _result(False, 'blocked', policy)

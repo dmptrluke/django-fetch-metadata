@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (2026-03-29)
+
+- Add LAX preset: allows all cross-site GET/HEAD requests, blocks state-changing methods only
+- Add `FETCH_METADATA_ALLOW_SAFE_METHODS` setting for per-view and global control
+- DEFAULT preset now documented as opinionated (blocks cross-site GETs, iframes, script includes)
+
 ## 0.1.0 (2026-03-29)
 
 Initial release.

@@ -45,7 +45,7 @@ def fetch_metadata_exempt(view):
     return _wrap_view_func(view, 'fetch_metadata_exempt', True)
 
 
-def fetch_metadata_policy(allowed_sites=None, allow_navigations=None, fail_open=None):
+def fetch_metadata_policy(allowed_sites=None, allow_navigations=None, allow_safe_methods=None, fail_open=None):
     """Override the global Fetch Metadata policy for a specific view.
 
     Only the parameters you pass are overridden; the rest fall through
@@ -57,6 +57,7 @@ def fetch_metadata_policy(allowed_sites=None, allow_navigations=None, fail_open=
         for k, v in {
             'ALLOWED_SITES': allowed_sites,
             'ALLOW_NAVIGATIONS': allow_navigations,
+            'ALLOW_SAFE_METHODS': allow_safe_methods,
             'FAIL_OPEN': fail_open,
         }.items()
         if v is not None

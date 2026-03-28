@@ -27,6 +27,14 @@ class TestGetConfig(SimpleTestCase):
         result = get_config('ALLOWED_SITES')
         self.assertEqual(result, ['same-origin', 'same-site', 'none'])
 
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_lax_preset(self):
+        # LAX preset: same-origin + none, navigations + safe methods, fail-open
+        self.assertEqual(get_config('ALLOWED_SITES'), ['same-origin', 'none'])
+        self.assertTrue(get_config('ALLOW_NAVIGATIONS'))
+        self.assertTrue(get_config('ALLOW_SAFE_METHODS'))
+        self.assertTrue(get_config('FAIL_OPEN'))
+
     @override_settings(FETCH_METADATA_PRESET='API')
     def test_api_preset(self):
         # API preset: same-origin only, no navigations

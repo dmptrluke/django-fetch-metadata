@@ -253,6 +253,80 @@ class TestNavigationExemption(SimpleTestCase):
         self.assertEqual(result.status_code, 403)
 
 
+class TestSafeMethodExemption(SimpleTestCase):
+    """ALLOW_SAFE_METHODS passes all GET/HEAD regardless of site."""
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_cross_site_cors_get_allowed(self):
+        # cross-site fetch() GET passes under LAX
+        factory = RequestFactory()
+        request = factory.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNone(result)
+        self.assertTrue(request._fetch_metadata['allowed'])
+        self.assertEqual(request._fetch_metadata['reason'], 'safe_method')
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_cross_site_no_cors_get_allowed(self):
+        # cross-site <script>/<img> GET passes under LAX
+        factory = RequestFactory()
+        request = factory.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='no-cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNone(result)
+        self.assertTrue(request._fetch_metadata['allowed'])
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_cross_site_nested_navigate_get_allowed(self):
+        # cross-site iframe GET passes under LAX
+        factory = RequestFactory()
+        request = factory.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='nested-navigate')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNone(result)
+        self.assertTrue(request._fetch_metadata['allowed'])
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_cross_site_head_allowed(self):
+        # cross-site HEAD passes under LAX
+        factory = RequestFactory()
+        request = factory.head('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNone(result)
+        self.assertTrue(request._fetch_metadata['allowed'])
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_cross_site_post_still_blocked(self):
+        # cross-site POST blocked even under LAX
+        factory = RequestFactory()
+        request = factory.post('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNotNone(result)
+        self.assertEqual(result.status_code, 403)
+
+    def test_cross_site_get_blocked_under_default(self):
+        # cross-site fetch() GET still blocked under DEFAULT
+        factory = RequestFactory()
+        request = factory.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNotNone(result)
+        self.assertEqual(result.status_code, 403)
+
+    @override_settings(FETCH_METADATA_ALLOW_SAFE_METHODS=True)
+    def test_explicit_setting_overrides_preset(self):
+        # explicit ALLOW_SAFE_METHODS=True overrides DEFAULT preset
+        factory = RequestFactory()
+        request = factory.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        mw = _make_middleware()
+        result = mw.process_view(request, _dummy_view, (), {})
+        self.assertIsNone(result)
+        self.assertTrue(request._fetch_metadata['allowed'])
+
+
 class TestReportOnly(SimpleTestCase):
     """Report-only mode logs but does not block."""
 

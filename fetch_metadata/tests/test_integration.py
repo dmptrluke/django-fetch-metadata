@@ -78,3 +78,15 @@ class TestIntegration(SimpleTestCase):
             HTTP_SEC_FETCH_DEST='object',
         )
         self.assertEqual(response.status_code, 403)
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_lax_allows_cross_site_get(self):
+        # LAX preset allows cross-site fetch() GET through full stack
+        response = self.client.get('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(FETCH_METADATA_PRESET='LAX')
+    def test_lax_blocks_cross_site_post(self):
+        # LAX preset still blocks cross-site POST
+        response = self.client.post('/test/', HTTP_SEC_FETCH_SITE='cross-site', HTTP_SEC_FETCH_MODE='cors')
+        self.assertEqual(response.status_code, 403)

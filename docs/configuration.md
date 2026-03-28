@@ -9,6 +9,7 @@ All settings are optional. The DEFAULT preset works without any configuration.
 | `FETCH_METADATA_PRESET` | `'DEFAULT'` | Named preset. Provides defaults for all other settings. |
 | `FETCH_METADATA_ALLOWED_SITES` | preset | `Sec-Fetch-Site` values that pass. List of strings. |
 | `FETCH_METADATA_ALLOW_NAVIGATIONS` | preset | Allow cross-site `navigate` requests with safe methods (GET/HEAD). |
+| `FETCH_METADATA_ALLOW_SAFE_METHODS` | preset | Allow all cross-site GET/HEAD requests regardless of mode. |
 | `FETCH_METADATA_FAIL_OPEN` | preset | Pass requests that don't include a `Sec-Fetch-Site` header. |
 | `FETCH_METADATA_REPORT_ONLY` | `False` | Log violations but don't block. Global only (not per-view). |
 | `FETCH_METADATA_EXEMPT_PATHS` | `[]` | Path prefixes that skip all checks. Global only. |
@@ -27,7 +28,7 @@ Settings are resolved per-request in this order:
 ```
 
 Per-view decorators can only override policy settings (`ALLOWED_SITES`,
-`ALLOW_NAVIGATIONS`, `FAIL_OPEN`). Deployment settings (`REPORT_ONLY`,
+`ALLOW_NAVIGATIONS`, `ALLOW_SAFE_METHODS`, `FAIL_OPEN`). Deployment settings (`REPORT_ONLY`,
 `EXEMPT_PATHS`) are always global.
 
 ## Exempt Paths

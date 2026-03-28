@@ -29,21 +29,27 @@ MIDDLEWARE = [
 ]
 ```
 
-For most projects, this will be all you need. The DEFAULT preset allows same-origin
-requests, direct navigations (bookmarks, URL bar), and cross-site link clicks.
-Everything else is blocked.
+The DEFAULT preset is opinionated: it blocks all cross-site requests except
+link clicks (navigations). This includes cross-site `fetch()` GETs, `<script>`
+includes, `<img>` loads, and iframe embeds. For CSRF-like protection that only
+blocks cross-site state-changing requests, use the `LAX` preset:
+
+```python
+FETCH_METADATA_PRESET = 'LAX'
+```
 
 To enable system checks, add `'fetch_metadata'` to `INSTALLED_APPS`.
 
 ## Presets
 
-Three named presets cover common configurations:
+Four named presets cover common configurations:
 
-| Preset | Allowed Sites | Navigations | Fail Open | Use Case |
-|--------|--------------|-------------|-----------|----------|
-| **DEFAULT** | `same-origin`, `none` | Yes | Yes | Standard web app |
-| **API** | `same-origin` | No | Yes | API endpoints |
-| **STRICT** | `same-origin` | No | No | Admin panels, internal tools |
+| Preset | Blocks cross-site GETs | Blocks navigations | Fail Open | Use Case |
+|--------|----------------------|-------------------|-----------|----------|
+| **DEFAULT** | Yes | Link clicks allowed | Yes | Full resource isolation |
+| **LAX** | No | No | Yes | CSRF-like protection |
+| **API** | Yes | Yes | Yes | API endpoints |
+| **STRICT** | Yes | Yes | No | Admin panels, internal tools |
 
 ```python
 FETCH_METADATA_PRESET = 'API'
@@ -59,9 +65,10 @@ All settings are optional. The `DEFAULT` preset works without any configuration.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `FETCH_METADATA_PRESET` | `'DEFAULT'` | Named preset: `DEFAULT`, `API`, or `STRICT` |
+| `FETCH_METADATA_PRESET` | `'DEFAULT'` | Named preset: `DEFAULT`, `LAX`, `API`, or `STRICT` |
 | `FETCH_METADATA_ALLOWED_SITES` | preset | List of allowed `Sec-Fetch-Site` values |
 | `FETCH_METADATA_ALLOW_NAVIGATIONS` | preset | Allow cross-site `navigate` + GET/HEAD |
+| `FETCH_METADATA_ALLOW_SAFE_METHODS` | preset | Allow all cross-site GET/HEAD requests |
 | `FETCH_METADATA_FAIL_OPEN` | preset | Pass requests with no `Sec-Fetch-Site` header |
 | `FETCH_METADATA_REPORT_ONLY` | `False` | Log violations without blocking |
 | `FETCH_METADATA_EXEMPT_PATHS` | `[]` | Path prefixes to skip (e.g. `['/.well-known/']`) |
@@ -128,16 +135,17 @@ The middleware runs on every request via Django's `process_view` hook:
 3. The active policy is resolved (per-view decorator, or global preset + overrides)
 4. Missing `Sec-Fetch-Site` header: pass if `FAIL_OPEN`, block if not
 5. Header value in `allowed_sites`: pass
-6. Cross-site navigation via GET/HEAD with `ALLOW_NAVIGATIONS`: pass
-7. Everything else: log at WARNING and block (or pass in report-only mode)
+6. GET/HEAD with `ALLOW_SAFE_METHODS`: pass
+7. Cross-site navigation via GET/HEAD with `ALLOW_NAVIGATIONS`: pass
+8. Everything else: log at WARNING and block (or pass in report-only mode)
 
-All requests are checked, including GET. A cross-site `fetch()` GET is blocked.
-A cross-site link click (`Sec-Fetch-Mode: navigate` + GET) is allowed when
-`ALLOW_NAVIGATIONS` is enabled.
+Under DEFAULT, all cross-site requests are checked, including GETs. A cross-site
+`fetch()` GET is blocked. A cross-site link click (`Sec-Fetch-Mode: navigate` +
+GET) is allowed when `ALLOW_NAVIGATIONS` is enabled. Under LAX,
+`ALLOW_SAFE_METHODS` passes all cross-site GET/HEAD requests regardless of mode.
 
-Cross-site form POSTs (`Sec-Fetch-Mode: navigate` + POST) are blocked even with
-`ALLOW_NAVIGATIONS` enabled. The navigation exemption only applies to safe
-methods.
+Cross-site form POSTs (`Sec-Fetch-Mode: navigate` + POST) are blocked under all
+presets. The navigation exemption only applies to safe methods.
 
 ## Common Patterns
 
