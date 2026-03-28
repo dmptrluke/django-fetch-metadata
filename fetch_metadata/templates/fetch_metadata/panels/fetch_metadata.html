@@ -1,0 +1,45 @@
+<h4>Fetch Metadata Headers</h4>
+
+{% if has_data %}
+<table>
+  <thead>
+    <tr><th>Header</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sec-Fetch-Site</td><td>{{ site }}</td></tr>
+    <tr><td>Sec-Fetch-Mode</td><td>{{ mode }}</td></tr>
+    <tr><td>Sec-Fetch-Dest</td><td>{{ dest }}</td></tr>
+    <tr><td>Sec-Fetch-User</td><td>{{ user }}</td></tr>
+  </tbody>
+</table>
+
+<h4>Policy Decision</h4>
+<table>
+  <thead>
+    <tr><th>Field</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Decision</td>
+      <td>
+        {% if allowed %}
+          Allowed
+        {% elif report_only %}
+          Blocked (report-only)
+        {% else %}
+          <strong>Blocked</strong>
+        {% endif %}
+      </td>
+    </tr>
+    <tr><td>Reason</td><td>{{ reason }}</td></tr>
+    {% if policy %}
+    <tr><td>Allowed Sites</td><td>{{ policy.allowed_sites|default_if_none:"-"|join:", " }}</td></tr>
+    <tr><td>Allow Navigations</td><td>{{ policy.allow_navigations|default_if_none:"-" }}</td></tr>
+    <tr><td>Fail Open</td><td>{{ policy.fail_open|default_if_none:"-" }}</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+{% else %}
+<p>No Fetch Metadata data available for this request.</p>
+<p>Check that <code>FetchMetadataMiddleware</code> is in your <code>MIDDLEWARE</code> setting.</p>
+{% endif %}

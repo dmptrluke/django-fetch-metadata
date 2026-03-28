@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fetch Metadata Violation</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background: #f8f9fa; color: #212529; }
+    .container { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #dc3545; font-size: 1.5em; margin-bottom: 0.25em; }
+    h2 { font-size: 1.1em; margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid #dee2e6; padding-bottom: 0.25em; }
+    p { line-height: 1.5; }
+    .subtitle { color: #6c757d; margin-top: 0; }
+    table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+    th, td { text-align: left; padding: 6px 12px; border: 1px solid #dee2e6; }
+    th { background: #e9ecef; font-weight: 600; width: 200px; }
+    td { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; }
+    .missing { color: #6c757d; font-style: italic; font-family: inherit; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    .help { background: #fff3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 4px; margin-top: 1.5em; }
+    .help p { margin: 0.25em 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>403 Forbidden</h1>
+  <p class="subtitle">Cross-site request blocked by Fetch Metadata policy.</p>
+
+  {% if DEBUG %}
+  <h2>Request</h2>
+  <table>
+    <tr><th>Method</th><td>{{ request_method }}</td></tr>
+    <tr><th>Path</th><td>{{ request_path }}</td></tr>
+  </table>
+
+  <h2>Sec-Fetch-* Headers</h2>
+  <table>
+    <tr>
+      <th>Sec-Fetch-Site</th>
+      <td>{% if headers.site %}{{ headers.site }}{% else %}<span class="missing">not sent</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Sec-Fetch-Mode</th>
+      <td>{% if headers.mode %}{{ headers.mode }}{% else %}<span class="missing">not sent</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Sec-Fetch-Dest</th>
+      <td>{% if headers.dest %}{{ headers.dest }}{% else %}<span class="missing">not sent</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Sec-Fetch-User</th>
+      <td>{% if headers.user %}{{ headers.user }}{% else %}<span class="missing">not sent</span>{% endif %}</td>
+    </tr>
+  </table>
+
+  <h2>Policy Decision</h2>
+  <table>
+    <tr><th>Reason</th><td>{{ reason }}</td></tr>
+    {% if policy.allowed_sites %}
+    <tr><th>Allowed Sites</th><td>{{ policy.allowed_sites|join:", " }}</td></tr>
+    {% endif %}
+    {% if policy.allow_navigations != None %}
+    <tr><th>Allow Navigations</th><td>{{ policy.allow_navigations }}</td></tr>
+    {% endif %}
+    {% if policy.fail_open != None %}
+    <tr><th>Fail Open</th><td>{{ policy.fail_open }}</td></tr>
+    {% endif %}
+  </table>
+
+  <div class="help">
+    <p><strong>Troubleshooting:</strong></p>
+    {% if reason == "no_header_strict" %}
+    <p>This request was blocked because no <code>Sec-Fetch-Site</code> header was sent
+    and <code>FAIL_OPEN</code> is disabled. Non-browser clients (curl, webhooks, API consumers)
+    don't send Fetch Metadata headers.</p>
+    <p>To allow this request, you can:</p>
+    <p>- Set <code>FETCH_METADATA_FAIL_OPEN = True</code> (or use the DEFAULT preset)</p>
+    {% else %}
+    <p>This request was blocked because the <code>Sec-Fetch-Site</code> header value
+    is not in the list of allowed sites for this view.</p>
+    <p>To allow this request, you can:</p>
+    <p>- Add the site value to <code>FETCH_METADATA_ALLOWED_SITES</code></p>
+    {% endif %}
+    <p>- Add the path to <code>FETCH_METADATA_EXEMPT_PATHS</code></p>
+    <p>- Decorate the view with <code>@fetch_metadata_exempt</code></p>
+    <p>- Enable <code>FETCH_METADATA_REPORT_ONLY = True</code> to log without blocking</p>
+  </div>
+  {% else %}
+  <p>More information is available with <code>DEBUG=True</code>.</p>
+  {% endif %}
+</div>
+</body>
+</html>
