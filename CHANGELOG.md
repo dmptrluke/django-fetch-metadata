@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 (2026-03-31)
+
+- Improve PyPI metadata: add project URLs (Issues, Changelog), keywords, and SPDX license format
+- Enable digital attestations in the release workflow
+
 ## 0.2.0 (2026-03-29)
 
 - Add LAX preset: allows all cross-site GET/HEAD requests, blocks state-changing methods only
